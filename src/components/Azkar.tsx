@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Book, Search, Filter, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { cn } from '../lib/utils';
+import { azkarData } from '../lib/azkarData';
 
 interface Dhikr {
   category: string;
@@ -15,32 +16,12 @@ interface AzkarCategory {
   [key: string]: Dhikr[];
 }
 
-// Default categories if window.azkarData is not available
-const DEFAULT_AZKAR: AzkarCategory = {
-  "أذكار الصباح": [],
-  "أذكار المساء": [],
-  "أذكار النوم": [],
-  "أذكار الاستيقاظ": [],
-  "أذكار بعد السلام من الصلاة المفروضة": [],
-  "تسابيح": [],
-  "أدعية قرآنية": [],
-  "أدعية الأنبياء": []
-};
-
 export default function Azkar() {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedDhikr, setExpandedDhikr] = useState<string | null>(null);
   const [completedDhikr, setCompletedDhikr] = useState<{[key: string]: number}>({});
-  const [azkarData, setAzkarData] = useState<AzkarCategory>(DEFAULT_AZKAR);
-
-  useEffect(() => {
-    // Initialize azkarData from window object if available
-    if (typeof window !== 'undefined' && window.azkarData) {
-      setAzkarData(window.azkarData);
-    }
-  }, []);
 
   // Categories with their Arabic names and icons
   const categories = [

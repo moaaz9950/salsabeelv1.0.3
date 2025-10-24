@@ -3,26 +3,26 @@ import { Book, Search, Filter, ChevronDown, ChevronUp, Bookmark, Copy, Share2, I
 import { useTheme } from '../../hooks/useTheme';
 import { cn } from '../../lib/utils';
 
-// Import Hadith collections
-import bukhari from './sahih_bukhari.json';
-import muslim from './sahih_muslim.json';
-import abuDawud from './sunan_abi_dawud.json';
-import tirmidhi from './jami_at_tirmidhi.json';
-import nasai from './sunan_an_nasai.json';
-import ibnMajah from './sunan_ibn_majah.json';
+interface HadithCollection {
+  id: string;
+  name: string;
+  arabicName: string;
+  data: any;
+}
 
-const HADITH_COLLECTIONS = [
-  { id: 'bukhari', name: 'Sahih al-Bukhari', arabicName: 'صحيح البخاري', data: bukhari },
-  { id: 'muslim', name: 'Sahih Muslim', arabicName: 'صحيح مسلم', data: muslim },
-  { id: 'abu-dawud', name: 'Sunan Abi Dawud', arabicName: 'سنن أبي داود', data: abuDawud },
-  { id: 'tirmidhi', name: "Jami' at-Tirmidhi", arabicName: 'جامع الترمذي', data: tirmidhi },
-  { id: 'nasai', name: 'Sunan an-Nasai', arabicName: 'سنن النسائي', data: nasai },
-  { id: 'ibn-majah', name: 'Sunan Ibn Majah', arabicName: 'سنن ابن ماجه', data: ibnMajah }
+const COLLECTION_CONFIGS = [
+  { id: 'bukhari', name: 'Sahih al-Bukhari', arabicName: 'صحيح البخاري', file: 'sahih_bukhari.json' },
+  { id: 'muslim', name: 'Sahih Muslim', arabicName: 'صحيح مسلم', file: 'sahih_muslim.json' },
+  { id: 'abu-dawud', name: 'Sunan Abi Dawud', arabicName: 'سنن أبي داود', file: 'sunan_abi_dawud.json' },
+  { id: 'tirmidhi', name: "Jami' at-Tirmidhi", arabicName: 'جامع الترمذي', file: 'jami_at_tirmidhi.json' },
+  { id: 'nasai', name: 'Sunan an-Nasai', arabicName: 'سنن النسائي', file: 'sunan_an_nasai.json' },
+  { id: 'ibn-majah', name: 'Sunan Ibn Majah', arabicName: 'سنن ابن ماجه', file: 'sunan_ibn_majah.json' }
 ];
 
 export default function HadithViewer() {
   const { theme } = useTheme();
-  const [selectedCollection, setSelectedCollection] = useState(HADITH_COLLECTIONS[0]);
+  const [collections, setCollections] = useState<HadithCollection[]>([]);
+  const [selectedCollection, setSelectedCollection] = useState<HadithCollection | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [bookFilter, setBookFilter] = useState<string | null>(null);
   const [showArabic, setShowArabic] = useState(true);
@@ -33,6 +33,34 @@ export default function HadithViewer() {
   });
   const [expandedHadith, setExpandedHadith] = useState<string | null>(null);
   const [view, setView] = useState<'today' | 'week' | 'month' | 'all'>('today');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCollections = async () => {
+      try {
+        const loadedCollections = await Promise.all(
+          COLLECTION_CONFIGS.map(async (config) => {
+            const response = await fetch(`/hadith/${config.file}`);
+            const data = await response.json();
+            return {
+              id: config.id,
+              name: config.name,
+              arabicName: config.arabicName,
+              data
+            };
+          })
+        );
+        setCollections(loadedCollections);
+        setSelectedCollection(loadedCollections[0]);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading hadith collections:', error);
+        setLoading(false);
+      }
+    };
+
+    loadCollections();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('hadithBookmarks', JSON.stringify(bookmarks));
@@ -48,6 +76,7 @@ export default function HadithViewer() {
   };
 
   const handleCopyHadith = (hadith: any) => {
+    if (!selectedCollection) return;
     const text = `${hadith.arabic_text}\n\n${hadith.english_text}\n\n[${selectedCollection.name} ${hadith.local_num}]`;
     navigator.clipboard.writeText(text)
       .then(() => alert('Hadith copied to clipboard'))
@@ -55,6 +84,7 @@ export default function HadithViewer() {
   };
 
   const handleShareHadith = (hadith: any) => {
+    if (!selectedCollection) return;
     if (navigator.share) {
       navigator.share({
         title: `${selectedCollection.name} ${hadith.local_num}`,
@@ -78,7 +108,8 @@ export default function HadithViewer() {
   };
 
   const getFilteredHadith = () => {
-    const allHadith = selectedCollection.data.all_books.flatMap((book: any) => 
+    if (!selectedCollection) return [];
+    const allHadith = selectedCollection.data.all_books.flatMap((book: any) =>
       book.hadith_list?.map((hadith: any) => ({
         ...hadith,
         book: book.english_title
@@ -98,6 +129,26 @@ export default function HadithViewer() {
         return filtered;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-center">
+          <p>Loading hadith collections...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedCollection) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-center">
+          <p>No hadith collections available</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
@@ -125,9 +176,8 @@ export default function HadithViewer() {
       </div>
 
       <div className="mb-6 space-y-4">
-        {/* Collection Selector */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-          {HADITH_COLLECTIONS.map((collection) => (
+          {collections.map((collection) => (
             <button
               key={collection.id}
               onClick={() => setSelectedCollection(collection)}
