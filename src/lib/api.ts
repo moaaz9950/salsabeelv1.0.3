@@ -267,16 +267,32 @@ export async function fetchAllTafsir(surah: number, verse: number) {
   return results;
 }
 
-export async function fetchPrayerTimes(latitude: number, longitude: number, method = 3) {
+export async function fetchPrayerTimes(latitude: number, longitude: number, method = 3, date?: string) {
   try {
+    const formattedDate = date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('-');
     const response = await fetch(
-      `${PRAYER_API_BASE}/timings/${Math.floor(Date.now() / 1000)}?latitude=${latitude}&longitude=${longitude}&method=${method}`
+      `${PRAYER_API_BASE}/timings/${formattedDate}?latitude=${latitude}&longitude=${longitude}&method=${method}&shafaq=general`
     );
     if (!response.ok) throw new Error('Failed to fetch prayer times');
     const data = await response.json();
     return data;
   } catch (error) {
     console.error('Error fetching prayer times:', error);
+    throw error;
+  }
+}
+
+export async function fetchPrayerTimesByAddress(address: string, method = 3, date?: string) {
+  try {
+    const formattedDate = date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('-');
+    const response = await fetch(
+      `${PRAYER_API_BASE}/timingsByAddress/${formattedDate}?address=${encodeURIComponent(address)}&method=${method}&shafaq=general`
+    );
+    if (!response.ok) throw new Error('Failed to fetch prayer times');
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching prayer times by address:', error);
     throw error;
   }
 }

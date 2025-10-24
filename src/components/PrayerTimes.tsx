@@ -311,47 +311,27 @@ export default function PrayerTimes() {
       setLoading(true);
       setError(null);
 
+      const today = new Date();
+      const formattedDate = format(today, 'dd-MM-yyyy');
       let apiUrl: string;
-      
-      if (locationMethod === 'manual' || !location.lat || !location.lng) {
-        // Use city-based API for manual location or when coordinates are not available
-        const now = new Date();
-        const hijriResponse = await fetch(`https://api.aladhan.com/v1/gToH/${format(now, 'dd-MM-yyyy')}`);
-        const hijriData = await hijriResponse.json();
-        
-        if (hijriData.code !== 200) {
-          throw new Error('Failed to get Hijri date');
-        }
 
-        const hijriMonth = hijriData.data.hijri.month.number;
-        const hijriYear = hijriData.data.hijri.year;
-
-        apiUrl = `https://api.aladhan.com/v1/hijriCalendarByCity/${hijriYear}/${hijriMonth}?city=${encodeURIComponent(location.city || 'Mecca')}&country=${encodeURIComponent(location.country || 'Saudi Arabia')}&method=${calculationMethod}&shafaq=general`;
+      if (locationMethod === 'manual' || (!location.lat && !location.lng)) {
+        // Use address-based API for manual location
+        const address = `${location.city}, ${location.country}`;
+        apiUrl = `https://api.aladhan.com/v1/timingsByAddress/${formattedDate}?address=${encodeURIComponent(address)}&method=${calculationMethod}&shafaq=general`;
       } else {
         // Use coordinate-based API for automatic location
-        const timestamp = Math.floor(Date.now() / 1000);
-        apiUrl = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${location.lat}&longitude=${location.lng}&method=${calculationMethod}&shafaq=general`;
+        apiUrl = `https://api.aladhan.com/v1/timings/${formattedDate}?latitude=${location.lat}&longitude=${location.lng}&method=${calculationMethod}&shafaq=general`;
       }
-      
+
       const response = await fetch(apiUrl);
       const data = await response.json();
-      
+
       if (data.code === 200 && data.data) {
-        let todayData;
-        
-        if (Array.isArray(data.data)) {
-          // Calendar API response
-          const today = format(new Date(), 'dd-MM-yyyy');
-          todayData = data.data.find((day: any) => day.date.gregorian.date === today) || data.data[0];
-        } else {
-          // Single day API response
-          todayData = data.data;
-        }
-        
-        setPrayerData(todayData);
+        setPrayerData(data.data);
         setError(null);
       } else {
-        throw new Error('Invalid API response');
+        throw new Error(data.data || 'Invalid API response');
       }
     } catch (err) {
       console.error('Failed to fetch prayer times:', err);
