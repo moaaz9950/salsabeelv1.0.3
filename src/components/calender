@@ -1,0 +1,49 @@
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "hijri": {
+      "date": "01-07-1446",
+      "format": "DD-MM-YYYY",
+      "day": "1",
+      "weekday": {
+        "en": "Al Arba'a",
+        "ar": "الاربعاء"
+      },
+      "month": {
+        "number": 7,
+        "en": "Rajab",
+        "ar": "رَجَب",
+        "days": 30
+      },
+      "year": "1446",
+      "designation": {
+        "abbreviated": "AH",
+        "expanded": "Anno Hegirae"
+      },
+      "holidays": [
+        "Beginning of the holy months"
+      ],
+      "adjustedHolidays": [],
+      "method": "UAQ"
+    },
+    "gregorian": {
+      "date": "01-01-2025",
+      "format": "DD-MM-YYYY",
+      "day": "01",
+      "weekday": {
+        "en": "Wednesday"
+      },
+      "month": {
+        "number": 1,
+        "en": "January"
+      },
+      "year": "2025",
+      "designation": {
+        "abbreviated": "AD",
+        "expanded": "Anno Domini"
+      },
+      "lunarSighting": false
+    }
+  }
+}
